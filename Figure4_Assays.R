@@ -59,10 +59,10 @@ IG = ggplot(OG_data_L_Spike, aes(x = Group, y = log10(Measurement), fill = Ig, g
 ########################################################
 OG_data_L_N = subset(OG_data_L, OG_data_L$Type %in% c("MSD.IgA.N", "MSD.IgG.N"))
 OG_data_L_N$SelfReported= ifelse(OG_data_L_N$SR_Covid == 1, 
-                                 "Infected", "Uninfected")
+                                 "SR-Infected", "No SR-infection")
 OG_data_L_N = subset(OG_data_L_N, is.na(OG_data_L_N$SelfReported) == F)
 #Cutoffs from Figure 3
-A_Cutoff = 12.7528; G_Cutoff = 0.0113
+A_Cutoff = 12.75; G_Cutoff = 0.011
 
 OG_data_L_N$Trend = ifelse(OG_data_L_N$Type == "MSD.IgA.N" & OG_data_L_N$Measurement <= A_Cutoff, "Negative: IgA", 
                            ifelse(OG_data_L_N$Type == "MSD.IgA.N" & OG_data_L_N$Measurement > A_Cutoff, "Positive: IgA", 
@@ -79,19 +79,26 @@ OG_data_L_N$Trend = ifelse(OG_data_L_N$Type == "MSD.IgA.N" & OG_data_L_N$Measure
 #     Q2 = quantile(Measurement, probs = c(0.75))
 #   )
 
-OG_data_L_N$isotype = gsub("MSD.IgG.N", "N IgG", OG_data_L_N$Type)
-OG_data_L_N$isotype = gsub("MSD.IgG.A", "N IgA", OG_data_L_N$isotype)
+OG_data_L_N$isotype = gsub("MSD.IgG.N", "Nucleocapsid IgG", OG_data_L_N$Type)
+OG_data_L_N$isotype = gsub("MSD.IgA.N", "Nucleocapsid IgA", OG_data_L_N$isotype)
 
-OG_data_L_N$isotype = factor(OG_data_L_N$isotype, levels = c("N IgG", "N IgA"))
+OG_data_L_N$isotype = factor(OG_data_L_N$isotype, levels = c("Nucleocapsid IgG", "Nucleocapsid IgA"))
 set.seed(1)
 N_cutoff = ggplot(OG_data_L_N, aes(x = SelfReported,
                                    y = log10(Measurement), 
                                    fill = Trend, shape = Trend,
                                    group = SelfReported))  + 
+  #Create horizontal lines for cutoffs 
+  geom_hline(data = OG_data_L_N[OG_data_L_N$isotype == "Nucleocapsid IgA",],
+             aes(yintercept = log10(0.053)),
+             color = "darkblue", linetype = "dotted")+
+  geom_hline(data = OG_data_L_N[OG_data_L_N$isotype == "Nucleocapsid IgG",],
+             aes(yintercept = log10(0.00043)),
+             color = "red4", linetype = "dotted")+
   #Add cutoffs from Figure 3 
-  geom_hline(data = subset(OG_data_L_N, OG_data_L_N$isotype == "N IgG")[1,], 
+  geom_hline(data = subset(OG_data_L_N, OG_data_L_N$isotype == "Nucleocapsid IgG")[1,], 
              aes(yintercept = log10(G_Cutoff)), linetype = "dashed", color = "red3") + 
-  geom_hline(data = subset(OG_data_L_N, OG_data_L_N$isotype == "N IgA")[1,], 
+  geom_hline(data = subset(OG_data_L_N, OG_data_L_N$isotype == "Nucleocapsid IgA")[1,], 
              aes(yintercept = log10(A_Cutoff)), linetype = "dashed", color = "darkblue") + 
   #Add points for each indivdiual 
   geom_jitter(width = 0.25, size = 3) +
@@ -108,7 +115,9 @@ N_cutoff = ggplot(OG_data_L_N, aes(x = SelfReported,
                      label.x = 1.35, label.y = 2.4, 
                      size = 5) + 
   #Facet wrap to separate IgG and IgA 
-  facet_wrap(~isotype) + 
+  facet_wrap(~isotype, scale = "free_y") + 
+  #Set y axis 
+  coord_cartesian(ylim = c(-4, 3)) + 
   #Change shape and color 
   scale_shape_manual("Trend", breaks = c("Positive: IgG", "Positive: IgA", 
                                          "Negative: IgG", "Negative: IgA"), 
@@ -165,10 +174,13 @@ OG_data_L_FRNT = subset(OG_data_L, OG_data_L$Type %in% c("FRNT.eGFP.50","FRNT.50
 OG_data_L_FRNT$Type = gsub("FRNT.eGFP.50", "FRNT-eGFP", OG_data_L_FRNT$Type )
 OG_data_L_FRNT$Type = gsub("FRNT.50", "FRNT-AF647", OG_data_L_FRNT$Type )
 OG_data_L_FRNT$Type = factor(OG_data_L_FRNT$Type , 
-                             levels = c("FRNT-eGFP", "FRNT-AF647"))
+                             levels = c("FRNT-AF647", "FRNT-eGFP"))
 
 OG_data_L_FRNT$Threshold = ifelse(OG_data_L_FRNT$Measurement == (min(OG_data_L_FRNT$Measurement, na.rm = T)), 
                                   "Threshold", "Over")
+
+#OG_data_L_FRNT$Ty
+
 
 FRNT_plot = ggplot(OG_data_L_FRNT, aes(x = Type, y = log10(Measurement))) + 
   #LLOQ
@@ -192,7 +204,10 @@ FRNT_plot = ggplot(OG_data_L_FRNT, aes(x = Type, y = log10(Measurement))) +
   ylab(expression("Log10 FRNT"[50])) + 
   coord_cartesian(ylim = c(0, 3)) + 
   theme(axis.text.y = element_text(size = 11),
-        axis.text.x = element_text(size = 15), axis.title.x = element_blank(),
+        axis.text.x = element_text(size = 15), 
+        
+        axis.title.x = element_blank(),
+        axis.title.y = element_text(size = 15),
         legend.position = "none",
         strip.text.x = element_text(margin = margin(0.5,0,0.5,0, "mm"), 
                                     size = 14)); FRNT_plot
@@ -225,7 +240,7 @@ FRNT_plot_corr = ggplot(OG_data_L_FRNT_corr, aes(x = log10(X), y = log10(Y))) +
 ########################################################
 #Save Image 
 ########################################################
-jpeg("./Figure4.jpeg", res = 400, height = 4000, width = 5000)
+jpeg("./Figure4.1.jpeg", res = 400, height = 4000, width = 5000)
 ggarrange(ggarrange(IG, N_cutoff, ncol = 2, widths = c(1,1.5), align = "h"),
           ggarrange(Pseudo_plot, FRNT_plot, FRNT_plot_corr, align = "h",
                     ncol = 3),
