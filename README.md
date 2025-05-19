@@ -1,5 +1,9 @@
 # HBM_Covid19_assay
 
+## Figure2_Linearity.Parallelism.R
+* Inputs: Linearity.csv, Parallelism_IgA_2.csv, Parallelism_IgG_2.csv
+* Outputs: Figure 2 (Linearity and Parallelism)
+
 ## Figure3_Cutoff.R 
 * Inputs: N_Pre.Post.csv, PostPandemic_236.csv, S_Pre.Post.csv
 * Outputs: Figure 3 (Distribution of values from cutoff), Figure S1 (ROC and AUC)
